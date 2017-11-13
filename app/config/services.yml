@@ -33,3 +33,7 @@ services:
     # AppBundle\Service\ExampleService:
     #     arguments:
     #         $someArgument: 'some_value'
+
+    disk_information:
+        class: AppBundle\Command\SynchFilesCommand
+        arguments: ["%disks%"]
