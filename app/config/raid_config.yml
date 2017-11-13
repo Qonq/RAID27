@@ -1,0 +1,10 @@
+disks:
+    - type: master
+      name: WD ELEMENTS
+      root: /var/www/
+    - type: slave
+      name: WD ELEMENTS2
+      root: /var/www2/
+    - type: slave
+      name: WD ELEMENTS23
+      root: /var/www23/

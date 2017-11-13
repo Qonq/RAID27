@@ -1,3 +1,4 @@
-# RAID27
+RAID27
+======
 
-PHP Symfony project to duplicate and sync files on multiple hard drives 
+A Symfony project created on November 13, 2017, 3:26 pm.
