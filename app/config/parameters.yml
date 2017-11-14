@@ -1,0 +1,59 @@
+# This file is auto-generated during the composer install
+parameters:
+    database_host: 127.0.0.1
+    database_port: null
+    database_name: symfony
+    database_user: root
+    database_password: null
+    mailer_transport: smtp
+    mailer_host: 127.0.0.1
+    mailer_user: null
+    mailer_password: null
+    secret: cac1938a19e50845d18f4fa8a408775015eb6c5d
+
+
+    disks:
+        disk0:
+            type: master
+            name: WD ELEMENTS
+            root: /media/abdullah/ElementsEXT4/RAID/source/
+        disk1:
+            type: slave
+            name: WD ELEMENTS2
+            root: /media/abdullah/ElementsEXT4/RAID/duplicate/
+        disk2:
+            type: slave
+            name: WD ELEMENTS3
+            root: /media/abdullah/ElementsEXT4/RAID/duplicate2/
+        disk3:
+            type: slave
+            name: WD ELEMENTS4
+            root: /media/abdullah/ElementsEXT4/RAID/duplicate3/
+        disk4:
+            type: slave
+            name: WD ELEMENTS5
+            root: /media/abdullah/ElementsEXT4/RAID/duplicate4/
+        disk5:
+            type: slave
+            name: WD ELEMENTS6
+            root: /media/abdullah/ElementsEXT4/RAID/duplicate5/
+        disk6:
+            type: slave
+            name: WD ELEMENTS7
+            root: /media/abdullah/ElementsEXT4/RAID/duplicate6/
+        disk7:
+            type: slave
+            name: WD ELEMENTS8
+            root: /media/abdullah/ElementsEXT4/RAID/duplicate7/
+        disk8:
+            type: slave
+            name: WD ELEMENTS9
+            root: /media/abdullah/ElementsEXT4/RAID/duplicate8/
+        disk9:
+            type: slave
+            name: WD ELEMENTS10
+            root: /media/abdullah/ElementsEXT4/RAID/duplicate9/
+        disk10:
+            type: slave
+            name: WD ELEMENTS11
+            root: /media/abdullah/ElementsEXT4/RAID/duplicate10/

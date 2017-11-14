@@ -36,4 +36,4 @@ services:
 
     disk_information:
         class: AppBundle\Command\SynchFilesCommand
-        arguments: ["%disks%"]
+        arguments: ['%disks%']

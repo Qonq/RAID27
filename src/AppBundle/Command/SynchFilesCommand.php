@@ -3,22 +3,46 @@
 
 namespace AppBundle\Command;
 
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use \RecursiveIteratorIterator;
-use \RecursiveDirectoryIterator;
 
 class SynchFilesCommand extends Command
 {
 
+    /** @var array $disks */
     private $disks;
+    /** @var  OutputInterface $output */
+    private $output;
+    /** @var array $master */
+    private $master;
+    /** @var array $slaves */
+    private $slaves;
+    /** @var array $dirStructure */
+    private $dirStructure;
+
 
     public function __construct($disks = array()) {
-
-        $this->disks = $disks;
-
         parent::__construct();
+        $this->disks = $disks;
+    }
+
+
+
+    private function setMasterSlaves(){
+
+
+        $this->slaves = [];
+
+        foreach ($this->disks as $value){
+            if ($value['type']== 'master'){
+                $this->master = $value;
+            }else{
+                array_push($this->slaves, $value);
+            }
+        }
+
     }
 
     protected function configure(){
@@ -30,59 +54,112 @@ class SynchFilesCommand extends Command
     }
 
     protected function execute(InputInterface $input, OutputInterface $output){
-        $output->writeln("<info>STARTING CONSOLE COMMAND</info>");
 
+        $this->output = $output;
+        $this->output->writeln("<info>STARTING CONSOLE COMMAND</info>");
 
-        $path = realpath("/media/abdullah/ElementsEXT4/RAID/source/");
+        $this->setMasterSlaves();
+        $this->dirStructure = $this->getDirContents($this->master['root']);
 
+        $this->createDirStructure();
+        $this->replicateFiles();
 
-
-        $dirs = [];
-        $objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
-        foreach($objects as $name => $object){
-            $dirs[$name] = $object;
-        }
-
-
-        print_r($dirs);
-
-
-
-
-        //$dirs = $this->scandir_rec("/media/abdullah/ElementsEXT4/RAID/source/");
-        //
-        //$output->writeln($dirs);
-
-
-        $output->writeln("<info>\nEND CONSOLE COMMAND</info>");
+        $this->output->writeln("<info>END CONSOLE COMMAND</info>");
     }
 
 
-    protected function get(){
+    /**
+     * Returns the Contents of the master disk as the return of linux find . command does as an array
+     *
+     * @param $dir     string
+     * @param $results array recursive call
+     *
+     * @return array $results array
+     */
+    private function getDirContents($dir, &$results = array()){
+        if (is_dir($dir)){
 
-    }
-
-    protected function scandir_rec($root){
-
-
-        // When it's a file or not a valid dir name
-        // Print it out and stop recusion
-        if (is_file($root) || !is_dir($root)) {
-            return;
-        }
-
-        // starts the scan
-        $dirs = scandir($root);
-        foreach ($dirs as $dir) {
-            if ($dir == '.' || $dir == '..') {
-                continue; // skip . and ..
+            $files = scandir($dir);
+            foreach($files as  $value){
+                $path = realpath($dir.DIRECTORY_SEPARATOR.$value);
+                if(!is_dir($path)) {
+                    $array = array("isDir"=> false , "path" => $path );
+                    $results[] = $array;
+                } else if($value != "." && $value != "..") {
+                    $this->getDirContents($path, $results);
+                    $array = array("isDir"=> true , "path" => $path );
+                    $results[] = $array;
+                }
             }
-
-            $path = $root . '/' . $dir;
-            $this->scandir_rec($path); // <--- CALL THE FUNCTION ITSELF TO DO THE SAME THING WITH SUB DIRS OR FILES.
         }
-        return $dirs;
+        return $results;
     }
+
+    /**
+     * Loops through the master disks files and replicates the directory structure on the slave disks
+     */
+    private function createDirStructure(){
+
+        foreach ($this->slaves as $slave){
+
+            foreach ($this->dirStructure as $item) {
+
+                if (!$item['isDir']) {
+                    continue;
+                }
+                $path = str_replace($this->master['root'],
+                                    $slave['root'],
+                                    $item['path']);
+
+                if (!file_exists($path)) {
+                    mkdir($path);
+                    $this->output->writeln("<info>Directory: $path is successfully created on slave: " . $slave['name'] . ".</info>");
+                } else {
+                    if (!is_dir($path)) {
+                        throw new Exception("Directory on master disk is present on the slave disk as a file for directory: $path");
+                    }
+                }
+            }
+            $this->output->writeln("<comment>Directories successfully replicated on slave: ". $slave['name'] . " </comment>");
+        }
+        $this->output->writeln("<info>Directories successfully replicated for all slaves.</info>");
+    }
+
+
+    /**
+     * Loops through the master disks files and replicates the directory structure on the slave disks
+     */
+    private function replicateFiles(){
+
+        foreach ($this->slaves as $slave){
+            foreach ($this->dirStructure as $item) {
+
+                if ($item['isDir']) {
+                    continue;
+                }
+                $path = str_replace($this->master['root'],
+                                    $slave['root'],
+                                    $item['path']);
+
+                if (!file_exists($path)) {
+                    copy($item['path'], $path);
+                    $this->output->writeln("<info>File: $path is successfully created on slave: " .$slave['name'] . ".</info>");
+                } else {
+                    $existngMd5 = md5_file($path);
+                    $masterFileMd5 = md5_file($item['path']);
+
+                    if ($existngMd5 == $masterFileMd5) {
+                        continue;
+                    }else{
+                        $this->output->writeln("<error>File: $path already exists on slave: ". $slave['name'] . "!</error>");
+                    }
+                }
+            }
+            $this->output->writeln("<comment>Files successfully replicated on slave: ".$slave['name'] ." </comment>");
+        }
+        $this->output->writeln("<info>All files are successfully replicated for all slaves </info>");
+    }
+
 
 
 }
