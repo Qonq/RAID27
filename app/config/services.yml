@@ -34,6 +34,11 @@ services:
     #     arguments:
     #         $someArgument: 'some_value'
 
-    disk_information:
+    synch_slaves:
         class: AppBundle\Command\SynchFilesCommand
         arguments: ['%disks%']
+
+    cleanup_slaves:
+            class: AppBundle\Command\SynchFilesCommand
+            arguments: ['%disks%']
+

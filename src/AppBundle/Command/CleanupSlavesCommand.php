@@ -8,7 +8,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class SynchFilesCommand extends Command
+class CleanupSlavesCommand extends Command
 {
 
     /** @var array $disks */
@@ -22,6 +22,19 @@ class SynchFilesCommand extends Command
     /** @var array $dirStructure */
     private $dirStructure;
 
+
+    public function __construct($disks = array()) {
+        parent::__construct();
+        $this->disks = $disks;
+    }
+
+    protected function configure(){
+
+        $this
+            ->setName('raid27:synch:start')
+            ->setDescription("Envokes the synchronisation process");
+
+    }
 
     private function setMasterSlaves(){
 
@@ -38,18 +51,7 @@ class SynchFilesCommand extends Command
 
     }
 
-    public function __construct($disks = array()) {
-        parent::__construct();
-        $this->disks = $disks;
-    }
 
-    protected function configure(){
-
-        $this
-            ->setName('raid27:synch:start')
-            ->setDescription("Envokes the synchronisation process");
-
-    }
 
     protected function execute(InputInterface $input, OutputInterface $output){
 
