@@ -19,8 +19,8 @@ class CleanupSlavesCommand extends Command
     private $master;
     /** @var array $slaves */
     private $slaves;
-    /** @var array $dirStructure */
-    private $dirStructure;
+    /** @var array $masterDirStructure */
+    private $masterDirStructure;
 
 
     public function __construct($disks = array()) {
@@ -31,7 +31,7 @@ class CleanupSlavesCommand extends Command
     protected function configure(){
 
         $this
-            ->setName('raid27:synch:start')
+            ->setName('raid27:cleanup:start')
             ->setDescription("Envokes the synchronisation process");
 
     }
@@ -59,12 +59,42 @@ class CleanupSlavesCommand extends Command
         $this->output->writeln("<info>STARTING CONSOLE COMMAND</info>");
 
         $this->setMasterSlaves();
-        $this->dirStructure = $this->getDirContents($this->master['root']);
+        $this->masterDirStructure = $this->getDirContents($this->master['root']);
+
+
+        $this->cleanup();
+
 
         $this->createDirStructure();
         $this->replicateFiles();
 
         $this->output->writeln("<info>END CONSOLE COMMAND</info>");
+    }
+
+    private function cleanup(){
+        foreach ($this->slaves as $slave){
+            $slaveDirStructure = $this->getDirContents($slave['root']);
+
+            $itemCounter=0;
+            foreach ($this->masterDirStructure as $item){
+                if ($item['isDir']){
+                    $itemCounter++;
+                    continue;
+                }
+
+                if (file_exists($slaveDirStructure[$itemCounter]['path']) && is_file($slaveDirStructure[$itemCounter]['path'])){
+                    $masterFileMd5 = md5_file($item['path']);
+                    $slaveFileMd5 = md5_file($slaveDirStructure[$itemCounter]['path']);
+
+                    if ($masterFileMd5 !== $slaveFileMd5){
+                        unlink($slaveDirStructure[$itemCounter]['path']);
+                    }
+                }
+                $itemCounter++;
+            }
+
+
+        }
     }
 
 
@@ -132,7 +162,7 @@ class CleanupSlavesCommand extends Command
     private function replicateFiles(){
 
         foreach ($this->slaves as $slave){
-            foreach ($this->dirStructure as $item) {
+            foreach ($this->masterDirStructure as $item) {
 
                 if ($item['isDir']) {
                     continue;
