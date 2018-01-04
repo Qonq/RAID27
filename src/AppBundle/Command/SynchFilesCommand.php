@@ -72,7 +72,7 @@ class SynchFilesCommand extends Command
      * @param $dir     string
      * @param $results array recursive call
      *
-     * @return array $results array
+     * @return array
      */
     private function getDirContents($dir, &$results = array()){
         if (is_dir($dir)){
