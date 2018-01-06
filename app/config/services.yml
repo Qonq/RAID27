@@ -39,6 +39,6 @@ services:
         arguments: ['%disks%']
 
     cleanup_slaves:
-            class: AppBundle\Command\SynchFilesCommand
-            arguments: ['%disks%']
+        class: AppBundle\Command\CleanupSlavesCommand
+        arguments: ['%disks%']
 
