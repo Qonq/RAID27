@@ -3,7 +3,6 @@
 
 namespace AppBundle\Command;
 
-use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -65,8 +64,6 @@ class CleanupSlavesCommand extends Command
         $this->cleanup();
 
 
-        $this->createDirStructure();
-        $this->replicateFiles();
 
         $this->output->writeln("<info>END CONSOLE COMMAND</info>");
     }
@@ -75,27 +72,30 @@ class CleanupSlavesCommand extends Command
         foreach ($this->slaves as $slave){
             $slaveDirStructure = $this->getDirContents($slave['root']);
 
-            $itemCounter=0;
-            foreach ($this->masterDirStructure as $item){
-                if ($item['isDir']){
-                    $itemCounter++;
+            foreach ($slaveDirStructure as $item){
+
+                if ($item['isDir'])
                     continue;
-                }
+                $this->checkMaster($item, $slave, false);
+            }
 
-                if (file_exists($slaveDirStructure[$itemCounter]['path']) && is_file($slaveDirStructure[$itemCounter]['path'])){
-                    $masterFileMd5 = md5_file($item['path']);
-                    $slaveFileMd5 = md5_file($slaveDirStructure[$itemCounter]['path']);
+            foreach ($slaveDirStructure as $item){
 
-                    if ($masterFileMd5 !== $slaveFileMd5){
-                        unlink($slaveDirStructure[$itemCounter]['path']);
-                    }
-                }
-                $itemCounter++;
+                if (!$item['isDir'])
+                    continue;
+                $this->checkMaster($item, $slave, true);
+
             }
 
 
+            $this->output->writeln("<info>FINISHED CLEANUP FOR SLAVE:".$slave['name'].".</info>");
+
         }
+
+
     }
+
+
 
 
     /**
@@ -104,7 +104,7 @@ class CleanupSlavesCommand extends Command
      * @param $dir     string
      * @param $results array recursive call
      *
-     * @return array $results array
+     * @return array
      */
     private function getDirContents($dir, &$results = array()){
         if (is_dir($dir)){
@@ -125,71 +125,36 @@ class CleanupSlavesCommand extends Command
         return $results;
     }
 
-    /**
-     * Loops through the master disks files and replicates the directory structure on the slave disks
-     */
-    private function createDirStructure(){
 
-        foreach ($this->slaves as $slave){
-
-            foreach ($this->dirStructure as $item) {
-
-                if (!$item['isDir']) {
-                    continue;
-                }
-                $path = str_replace($this->master['root'],
-                                    $slave['root'],
-                                    $item['path']);
-
-                if (!file_exists($path)) {
-                    mkdir($path);
-                    $this->output->writeln("<info>Directory: $path is successfully created on slave: " . $slave['name'] . ".</info>");
-                } else {
-                    if (!is_dir($path)) {
-                        throw new Exception("Directory on master disk is present on the slave disk as a file for directory: $path");
-                    }
-                }
-            }
-            $this->output->writeln("<comment>Directories successfully replicated on slave: ". $slave['name'] . " </comment>");
-        }
-        $this->output->writeln("<info>Directories successfully replicated for all slaves.</info>");
-    }
 
 
     /**
-     * Loops through the master disks files and replicates the directory structure on the slave disks
+     * Checks if file is exists on master and if the MD5sum is equal, if not, it deletes file or directory
      */
-    private function replicateFiles(){
+    public function checkMaster($item, $slave, $isDir){
 
-        foreach ($this->slaves as $slave){
-            foreach ($this->masterDirStructure as $item) {
+        $slaveRoot =    $slave['root'];
+        $path =         $item['path'];
+        $checkPath =    $this->master['root'].substr($path, strlen($slaveRoot));
 
-                if ($item['isDir']) {
-                    continue;
-                }
-                $path = str_replace($this->master['root'],
-                                    $slave['root'],
-                                    $item['path']);
 
-                if (!file_exists($path)) {
-                    copy($item['path'], $path);
-                    $this->output->writeln("<info>File: $path is successfully created on slave: " .$slave['name'] . ".</info>");
-                } else {
-                    $existngMd5 = md5_file($path);
-                    $masterFileMd5 = md5_file($item['path']);
+        if ($isDir){
+            if(file_exists($checkPath) && is_dir($checkPath)){
+                return;
+            }
+            rmdir($path);
 
-                    if ($existngMd5 == $masterFileMd5) {
-                        continue;
-                    }else{
-                        $this->output->writeln("<error>File: $path already exists on slave: ". $slave['name'] . "!</error>");
-                    }
+        }else{
+            if (file_exists($checkPath) && is_file($checkPath)){
+                $md5Tocompare = md5_file($path);
+                $md5Master    = md5_file($checkPath);
+                if ($md5Tocompare == $md5Master){
+                    return;
                 }
             }
-            $this->output->writeln("<comment>Files successfully replicated on slave: ".$slave['name'] ." </comment>");
+            unlink($path);
         }
-        $this->output->writeln("<info>All files are successfully replicated for all slaves </info>");
+        return;
     }
-
-
 
 }
