@@ -126,10 +126,12 @@ class CleanupSlavesCommand extends Command
     }
 
 
-
-
     /**
      * Checks if file is exists on master and if the MD5sum is equal, if not, it deletes file or directory
+     *
+     * @param array $item
+     * @param array $slave
+     * @param bool $isDir
      */
     public function checkMaster($item, $slave, $isDir){
 
