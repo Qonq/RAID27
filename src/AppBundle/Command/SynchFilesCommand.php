@@ -74,19 +74,19 @@ class SynchFilesCommand extends Command
      *
      * @return array
      */
+
     private function getDirContents($dir, &$results = array()){
         if (is_dir($dir)){
 
-            $files = scandir($dir);
-            foreach($files as  $value){
-                $path = realpath($dir.DIRECTORY_SEPARATOR.$value);
+            $files = $this->scandirExtended($dir);
+            foreach($files as  $path){
                 if(!is_dir($path)) {
                     $array = array("isDir"=> false , "path" => $path );
-                    $results[] = $array;
-                } else if($value != "." && $value != "..") {
-                    $this->getDirContents($path, $results);
+                    array_push($results, $array);
+                }else{
                     $array = array("isDir"=> true , "path" => $path );
-                    $results[] = $array;
+                    array_push($results, $array);
+                    $this->getDirContents($path, $results);
                 }
             }
         }
@@ -158,6 +158,26 @@ class SynchFilesCommand extends Command
         $this->output->writeln("<info>All files are successfully replicated for all slaves </info>");
     }
 
+    /**
+     * Extends the builtin function scandir but returns the same output without . and .. in a sorted manner: directories first, followed by files
+     * @param string $directory
+     * @return array
+     */
+    private function scandirExtended($directory){
+        $original       = array_diff(scandir($directory), ['.','..']);
+        $directories    = [];
+        $files          = [];
 
+        foreach ($original as $item){
+            $path = realpath($directory.DIRECTORY_SEPARATOR.$item);
+            if (is_dir($path)){
+                array_push($directories, $path);
+            }
+            else{
+                array_push($files, $path);
+            }
+        }
+        return $directories+$files;
+    }
 
 }
