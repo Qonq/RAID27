@@ -54,7 +54,7 @@ class SynchFilesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output){
 
         $this->output = $output;
-        $this->output->writeln("<info>STARTING CONSOLE COMMAND</info>");
+        $this->output->writeln("<info>STARTING CONSOLE COMMAND</info>", OutputInterface::VERBOSITY_NORMAL);
 
         $this->setMasterSlaves();
         $this->dirStructure = $this->getDirContents($this->master['root']);
@@ -62,7 +62,7 @@ class SynchFilesCommand extends Command
         $this->createDirStructure();
         $this->replicateFiles();
 
-        $this->output->writeln("<info>END CONSOLE COMMAND</info>");
+        $this->output->writeln("<info>END CONSOLE COMMAND</info>",OutputInterface::VERBOSITY_NORMAL);
     }
 
 
@@ -111,16 +111,16 @@ class SynchFilesCommand extends Command
 
                 if (!file_exists($path)) {
                     mkdir($path);
-                    $this->output->writeln("<info>Directory: $path is successfully created on slave: " . $slave['name'] . ".</info>");
+                    $this->output->writeln("<info>Directory: $path is successfully created on slave: " . $slave['name'] . ".</info>", OutputInterface::VERBOSITY_VERY_VERBOSE);
                 } else {
                     if (!is_dir($path)) {
                         throw new Exception("Directory on master disk is present on the slave disk as a file for directory: $path");
                     }
                 }
             }
-            $this->output->writeln("<comment>Directories successfully replicated on slave: ". $slave['name'] . " </comment>");
+            $this->output->writeln("<comment>Directories successfully replicated on slave: ". $slave['name'] . " </comment>",OutputInterface::VERBOSITY_NORMAL);
         }
-        $this->output->writeln("<info>Directories successfully replicated for all slaves.</info>");
+        $this->output->writeln("<info>Directories successfully replicated for all slaves.</info>", OutputInterface::VERBOSITY_NORMAL);
     }
 
 
@@ -141,7 +141,7 @@ class SynchFilesCommand extends Command
 
                 if (!file_exists($path)) {
                     copy($item['path'], $path);
-                    $this->output->writeln("<info>File: $path is successfully created on slave: " .$slave['name'] . ".</info>");
+                    $this->output->writeln("<info>File: $path is successfully created on slave: " .$slave['name'] . ".</info>",OutputInterface::VERBOSITY_VERY_VERBOSE);
                 } else {
                     $existngMd5 = md5_file($path);
                     $masterFileMd5 = md5_file($item['path']);
@@ -149,13 +149,13 @@ class SynchFilesCommand extends Command
                     if ($existngMd5 == $masterFileMd5) {
                         continue;
                     }else{
-                        $this->output->writeln("<error>File: $path already exists on slave: ". $slave['name'] . "!</error>");
+                        $this->output->writeln("<error>File: $path already exists on slave: ". $slave['name'] . "!</error>",OutputInterface::VERBOSITY_NORMAL);
                     }
                 }
             }
-            $this->output->writeln("<comment>Files successfully replicated on slave: ".$slave['name'] ." </comment>");
+            $this->output->writeln("<comment>Files successfully replicated on slave: ".$slave['name'] ." </comment>", OutputInterface::VERBOSITY_NORMAL);
         }
-        $this->output->writeln("<info>All files are successfully replicated for all slaves </info>");
+        $this->output->writeln("<info>All files are successfully replicated for all slaves </info>", OutputInterface::VERBOSITY_NORMAL);
     }
 
     /**
